@@ -151,12 +151,30 @@ if [ "$AUTH_METHOD" = "kerberos" ]; then
     echo "Using principal: $PRINCIPAL"
     # Set principal environment variable 
     export KRB5PRINCIPAL="$PRINCIPAL"
+    
+    # Get a Kerberos ticket first before attempting LDAP search
+    echo "Obtaining Kerberos ticket for principal: $PRINCIPAL"
+    kinit -k -t "$KEYTAB" "$PRINCIPAL" 2>/dev/null
+    if [ $? -ne 0 ]; then
+      echo "Error: Failed to obtain Kerberos ticket for principal $PRINCIPAL"
+      klist
+      exit 5
+    fi
   else
     # Try to get default principal from keytab
     DEFAULT_PRINCIPAL=$(klist -k "$KEYTAB" 2>/dev/null | tail -n 1 | awk '{print $2}')
     if [ -n "$DEFAULT_PRINCIPAL" ]; then
       echo "Using default principal from keytab: $DEFAULT_PRINCIPAL"
       export KRB5PRINCIPAL="$DEFAULT_PRINCIPAL"
+      
+      # Get a Kerberos ticket first before attempting LDAP search
+      echo "Obtaining Kerberos ticket for principal: $DEFAULT_PRINCIPAL"
+      kinit -k -t "$KEYTAB" "$DEFAULT_PRINCIPAL" 2>/dev/null
+      if [ $? -ne 0 ]; then
+        echo "Error: Failed to obtain Kerberos ticket for principal $DEFAULT_PRINCIPAL"
+        klist
+        exit 5
+      fi
     fi
   fi
   
@@ -165,6 +183,10 @@ if [ "$AUTH_METHOD" = "kerberos" ]; then
     echo "Using realm: $REALM"
     export KRB5REALM="$REALM"
   fi
+  
+  # Display current Kerberos tickets
+  echo "Current Kerberos tickets:"
+  klist
   
   # Add SASL options
   LDAPSEARCH_CMD="$LDAPSEARCH_CMD -Q"
@@ -268,6 +290,18 @@ else
   elif echo "$RESULT" | grep -i "gssapi" > /dev/null || echo "$RESULT" | grep -i "kerberos" > /dev/null; then
     echo "Kerberos authentication error:"
     echo "$RESULT" | grep -i -E "gssapi|kerberos" | head -3
+    
+    # Check if error 49 (invalid credentials) is present
+    if echo "$RESULT" | grep -i "error: 49" > /dev/null; then
+      echo "LDAP Error 49 - Invalid credentials. Troubleshooting steps:"
+      echo "1. Verify the keytab contains the correct principal"
+      echo "   Run: klist -k $KEYTAB"
+      echo "2. Ensure the principal has permissions to query the LDAP directory"
+      echo "3. Verify the time is synchronized with the domain controller"
+      echo "4. Check the realm is correct"
+      echo "5. Try kinit manually: kinit -k -t $KEYTAB $PRINCIPAL"
+    fi
+    
     exit 5
   else
     echo "Search failed:"

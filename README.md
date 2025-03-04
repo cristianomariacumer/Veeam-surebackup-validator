@@ -207,6 +207,43 @@ The application uses Loguru for advanced logging capabilities:
 
 You can customize the logging behavior by modifying the Loguru configuration in `app.py`.
 
+## IP Whitelisting
+
+The Backup Validator service supports IP whitelisting to restrict access to authorized clients only. By default, the service allows connections from:
+- localhost (127.0.0.1, ::1)
+- Private network ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+
+### Configuration Options
+
+You can customize the allowed IPs using one of these methods:
+
+1. **Environment Variable**:
+   ```
+   export ALLOWED_IPS="192.168.1.10,192.168.1.11,10.0.0.0/24"
+   ```
+
+2. **Configuration File**:
+   Create a file named `allowed_ips.conf` in the application directory with one IP or network per line:
+   ```
+   # Allow specific hosts
+   192.168.1.10
+   # Allow a subnet
+   10.0.0.0/24
+   ```
+
+   You can specify a different config file path with:
+   ```
+   export ALLOWED_IPS_FILE="/etc/backup-validator/allowed_ips.conf"
+   ```
+
+3. **Proxy Support**:
+   If the application is behind a proxy, enable trust for the X-Forwarded-For header:
+   ```
+   export TRUST_PROXY="true"
+   ```
+
+Requests from unauthorized IPs will receive a 403 Forbidden response.
+
 ## License
 
 [MIT License](LICENSE)
