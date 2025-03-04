@@ -3,7 +3,7 @@ import subprocess
 import sys
 import ipaddress
 import re
-from flask import Flask, request, abort
+from flask import Flask, request, abort, jsonify
 from flask_restful import Resource, Api
 from loguru import logger
 
@@ -118,6 +118,51 @@ class ScriptExecutor(Resource):
         Returns:
             tuple: (response, status_code)
         """
+        # Extract parameters from URL query string
+        params = {}
+        for param, value in request.args.items():
+            params[param] = value
+            
+        # Execute the script with the parameters
+        return self._execute_script(script_name, params)
+    
+    def post(self, script_name):
+        """
+        Execute a script with parameters provided in the JSON body and return appropriate HTTP status.
+        
+        Args:
+            script_name (str): Name of the script to execute
+            
+        Returns:
+            tuple: (response, status_code)
+        """
+        # Check if content type is JSON
+        if not request.is_json:
+            return {'error': 'Content-Type must be application/json'}, 415
+            
+        # Extract parameters from JSON body
+        try:
+            params = request.get_json()
+            if not isinstance(params, dict):
+                return {'error': 'JSON body must be an object'}, 400
+        except Exception as e:
+            logger.exception("Failed to parse JSON body")
+            return {'error': f'Invalid JSON: {str(e)}'}, 400
+            
+        # Execute the script with the parameters
+        return self._execute_script(script_name, params)
+    
+    def _execute_script(self, script_name, params):
+        """
+        Internal method to execute a script with the provided parameters.
+        
+        Args:
+            script_name (str): Name of the script to execute
+            params (dict): Parameters to pass to the script
+            
+        Returns:
+            tuple: (response, status_code)
+        """
         try:
             # Get client IP for logging
             client_ip = request.remote_addr
@@ -157,10 +202,10 @@ class ScriptExecutor(Resource):
             if sys.platform != 'win32':
                 os.chmod(script_path, 0o755)  # rwxr-xr-x
             
-            # Extract URL parameters and obfuscate password
+            # Extract parameters and obfuscate password for logging
             cmd_args = []
             log_args = []
-            for param, value in request.args.items():
+            for param, value in params.items():
                 cmd_args.append(f"--{param}={value}")
                 # Create a sanitized version for logging
                 if 'password' in param.lower():
@@ -200,7 +245,7 @@ class ScriptExecutor(Resource):
         except Exception as e:
             logger.exception(f"Error executing script {script_name}")
             return {'status': 'error', 'message': str(e)}, 500
-            
+
     def _sanitize_sensitive_data(self, text):
         """
         Sanitize sensitive data like passwords from the output text.

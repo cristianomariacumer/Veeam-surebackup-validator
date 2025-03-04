@@ -122,12 +122,28 @@ This provides better performance, stability, and security compared to Flask's bu
 
 #### Execute a Script
 
+The script execution endpoint supports both GET and POST requests:
+
 ```
 GET /backup-validator/{script-name}?param1=value1&param2=value2
 ```
 
+OR
+
+```
+POST /backup-validator/{script-name}
+Content-Type: application/json
+
+{
+  "param1": "value1", 
+  "param2": "value2"
+}
+```
+
 - `{script-name}`: Name of the script to execute (without extension)
-- URL parameters are passed to the script as command-line arguments in the format `--param=value`
+- Parameters can be provided either as URL query parameters (GET) or as a JSON object in the request body (POST)
+- In both cases, parameters are passed to the script as command-line arguments in the format `--param=value`
+- For sensitive information like passwords, using POST with JSON body is recommended
 
 #### Health Check
 
