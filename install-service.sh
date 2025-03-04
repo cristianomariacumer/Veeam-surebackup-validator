@@ -67,6 +67,61 @@ chown -R validator:validator "$INSTALL_DIR"
 echo "Installing systemd service..."
 cp "$CURRENT_DIR/backup-validator.service" /etc/systemd/system/
 
+# Configure sudo permissions for DHCP testing
+echo "Setting up sudo permissions for DHCP testing..."
+
+# Create sudoers file
+SUDOERS_FILE="/etc/sudoers.d/validator-dhcp"
+cat > "$SUDOERS_FILE" << 'EOF'
+# Allow validator user to run network commands required for DHCP testing without a password
+
+# Command aliases for network operations
+Cmnd_Alias NETWORK_COMMANDS = \
+    /sbin/ip link show *, \
+    /sbin/ip -4 addr show dev *, \
+    /sbin/ip link set * down, \
+    /sbin/ip link set * up, \
+    /sbin/ip route, \
+    /usr/bin/ping -c * -W * *
+
+# Command aliases for DHCP operations
+Cmnd_Alias DHCP_COMMANDS = \
+    /sbin/dhclient -r *, \
+    /sbin/dhclient -v *, \
+    /usr/sbin/dhclient -r *, \
+    /usr/sbin/dhclient -v *, \
+    /sbin/dhcpcd -k *, \
+    /sbin/dhcpcd -t * *, \
+    /usr/sbin/dhcpcd -k *, \
+    /usr/sbin/dhcpcd -t * *
+
+# Command aliases for DNS operations
+Cmnd_Alias DNS_COMMANDS = \
+    /usr/bin/host *, \
+    /usr/bin/cat /etc/resolv.conf
+
+# Command alias for timeout
+Cmnd_Alias TIMEOUT_COMMAND = \
+    /usr/bin/timeout * * *
+
+# Grant validator user permission to run the commands without a password
+validator ALL=(ALL) NOPASSWD: NETWORK_COMMANDS, DHCP_COMMANDS, DNS_COMMANDS, TIMEOUT_COMMAND
+EOF
+
+# Set proper permissions for sudoers file
+chmod 440 "$SUDOERS_FILE"
+
+# Verify sudoers syntax
+if command -v visudo &>/dev/null; then
+    if ! visudo -c -f "$SUDOERS_FILE"; then
+        echo "Error: Syntax error in sudoers file. Removing file to prevent system issues."
+        rm -f "$SUDOERS_FILE"
+        echo "Warning: DHCP testing will not work without sudo permissions."
+    else
+        echo "Sudo permissions set up successfully."
+    fi
+fi
+
 # Reload systemd configuration
 echo "Reloading systemd configuration..."
 systemctl daemon-reload
