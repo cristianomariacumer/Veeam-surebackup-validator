@@ -23,7 +23,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       echo "Unknown parameter: $1" >&2
-      echo "Usage: dhcp_test.sh --interface=eth0 [--timeout=30] [--expected-subnet=192.168.1]" >&2
+      echo "Usage: dhcp_test.sh --interface=eth0 [--timeout=30] [--expected-subnet=192.168.1.0/24]" >&2
       exit 1
       ;;
   esac
@@ -99,9 +99,81 @@ fi
 
 echo "New IP address: $new_ip"
 
+# Function to check if an IP address is within a subnet range
+# Takes two arguments: IP address and subnet range (CIDR or netmask notation)
+is_ip_in_subnet() {
+  local ip="$1"
+  local subnet="$2"
+  
+  # Check if the subnet uses CIDR notation or not
+  if [[ "$subnet" == *"/"* ]]; then
+    # CIDR notation (e.g., 192.168.1.0/24)
+    # Use ipcalc or sipcalc if available
+    if command -v ipcalc &>/dev/null; then
+      if ipcalc -c "$ip" "$subnet" &>/dev/null; then
+        return 0
+      else
+        return 1
+      fi
+    elif command -v sipcalc &>/dev/null; then
+      local network=$(sipcalc "$subnet" | grep "Network address" | head -1 | awk '{print $NF}')
+      local broadcast=$(sipcalc "$subnet" | grep "Broadcast address" | head -1 | awk '{print $NF}')
+      
+      # Use sort to compare IP addresses lexicographically
+      if [[ $(echo -e "$network\n$ip\n$broadcast" | sort -V | grep -n "$ip" | cut -d: -f1) -eq 2 ]]; then
+        return 0
+      else
+        return 1
+      fi
+    else
+      # Manual check using bash (less accurate and doesn't handle complex cases)
+      local subnet_ip=${subnet%/*}
+      local cidr=${subnet#*/}
+      
+      # Convert CIDR to netmask
+      local netmask=""
+      local full_octets=$((cidr / 8))
+      local partial_octet=$((cidr % 8))
+      
+      for ((i=0; i<4; i++)); do
+        if [[ $i -lt $full_octets ]]; then
+          netmask+="255"
+        elif [[ $i -eq $full_octets ]]; then
+          netmask+="$((256 - 2**(8-partial_octet)))"
+        else
+          netmask+="0"
+        fi
+        
+        [[ $i -lt 3 ]] && netmask+="."
+      done
+      
+      # Now check using the netmask
+      local IFS='.'
+      read -r -a ip_array <<< "$ip"
+      read -r -a subnet_array <<< "$subnet_ip"
+      read -r -a netmask_array <<< "$netmask"
+      
+      for ((i=0; i<4; i++)); do
+        if [[ $((ip_array[i] & netmask_array[i])) -ne $((subnet_array[i] & netmask_array[i])) ]]; then
+          return 1
+        fi
+      done
+      return 0
+    fi
+  else
+    # Legacy notation with subnet prefix (e.g., 192.168.1)
+    # Use simple string matching
+    if [[ "$ip" == $subnet* ]]; then
+      return 0
+    else
+      return 1
+    fi
+  fi
+}
+
 # Check if IP is in the expected subnet (if provided)
 if [ -n "$expected_subnet" ]; then
-  if [[ "$new_ip" == $expected_subnet* ]]; then
+  if is_ip_in_subnet "$new_ip" "$expected_subnet"; then
     echo "IP address is within expected subnet $expected_subnet"
   else
     echo "Error: IP address $new_ip is not in the expected subnet $expected_subnet" >&2
