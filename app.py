@@ -1,15 +1,24 @@
 import os
 import subprocess
 import sys
-import logging
 from flask import Flask, request
 from flask_restful import Resource, Api
-from werkzeug.exceptions import InternalServerError
+from loguru import logger
 
-# Configure logging
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger('backup-validator')
+# Configure Loguru logger
+logger.remove()  # Remove default handler
+logger.add(
+    sys.stderr,
+    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+    level="INFO"
+)
+logger.add(
+    "logs/backup-validator.log",
+    rotation="10 MB",
+    retention="1 week",
+    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+    level="INFO"
+)
 
 app = Flask(__name__)
 api = Api(app)
@@ -26,6 +35,10 @@ class ScriptExecutor(Resource):
             tuple: (response, status_code)
         """
         try:
+            # Sanitize script name to prevent directory traversal
+            if not script_name or '/' in script_name or '\\' in script_name or '..' in script_name:
+                return {'error': 'Invalid script name'}, 400
+                
             # Get the script directory
             script_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts')
             
@@ -42,6 +55,14 @@ class ScriptExecutor(Resource):
             # Check if script exists
             if not os.path.exists(script_path):
                 return {'error': f'Script {script_name} not found'}, 404
+                
+            # Verify the script is inside the scripts directory (prevent symlink attacks)
+            script_real_path = os.path.realpath(script_path)
+            scripts_real_dir = os.path.realpath(script_dir)
+            
+            if not script_real_path.startswith(scripts_real_dir):
+                logger.warning(f"Attempted to access script outside scripts directory: {script_path}")
+                return {'error': 'Access denied'}, 403
             
             # Make script executable (for Unix systems)
             if sys.platform != 'win32':
@@ -88,12 +109,15 @@ def health_check():
     return {'status': 'ok'}, 200
 
 if __name__ == '__main__':
+    # Create logs directory if it doesn't exist
+    os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs'), exist_ok=True)
+    
     # Create scripts directory if it doesn't exist
     os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts'), exist_ok=True)
     
     # Get host and port from environment variables or use defaults
     host = os.environ.get('HOST', '0.0.0.0')
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5001))
     
     logger.info(f"Starting backup-validator service on {host}:{port}")
     app.run(host=host, port=port, debug=os.environ.get('FLASK_DEBUG', 'False').lower() == 'true') 

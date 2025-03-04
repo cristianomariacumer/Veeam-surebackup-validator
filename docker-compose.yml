@@ -12,4 +12,5 @@ services:
       - FLASK_DEBUG=false
     volumes:
       - ./scripts:/app/scripts
+      - ./logs:/app/logs
     restart: unless-stopped 
