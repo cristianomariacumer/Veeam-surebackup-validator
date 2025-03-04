@@ -9,6 +9,7 @@
 #  4 = Error: LDAPS search failed
 #  5 = Error: Authentication failed
 #  6 = Error: Certificate validation failed
+#  7 = Error: Kerberos tools not found
 
 # Set default values
 TIMEOUT=10
@@ -16,6 +17,7 @@ PORT=636
 VERIFY_CERT=true
 SEARCH_FILTER="(objectClass=*)"
 ATTRS="dn"
+AUTH_METHOD="simple"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -38,6 +40,19 @@ while [[ $# -gt 0 ]]; do
       ;;
     --password=*)
       PASSWORD="${1#*=}"
+      shift
+      ;;
+    --keytab=*)
+      KEYTAB="${1#*=}"
+      AUTH_METHOD="kerberos"
+      shift
+      ;;
+    --principal=*)
+      PRINCIPAL="${1#*=}"
+      shift
+      ;;
+    --realm=*)
+      REALM="${1#*=}"
       shift
       ;;
     --search-filter=*)
@@ -74,8 +89,18 @@ if [ -z "$SERVER" ] || [ -z "$BASE_DN" ]; then
   echo ""
   echo "Optional parameters:"
   echo "  --port=PORT          LDAPS port (default: 636)"
-  echo "  --username=USERNAME  Bind DN for authentication"
-  echo "  --password=PASSWORD  Password for authentication"
+  echo ""
+  echo "Authentication options (choose one method):"
+  echo "  Simple authentication:"
+  echo "    --username=USERNAME  Bind DN for authentication"
+  echo "    --password=PASSWORD  Password for authentication"
+  echo ""
+  echo "  Kerberos authentication:"
+  echo "    --keytab=KEYTAB      Path to Kerberos keytab file"
+  echo "    --principal=PRINCIPAL Kerberos principal name (if not specified, derived from keytab)"
+  echo "    --realm=REALM        Kerberos realm (if not specified, derived from keytab)"
+  echo ""
+  echo "Other options:"
   echo "  --search-filter=FILTER  LDAP search filter (default: (objectClass=*))"
   echo "  --attrs=ATTRS        Comma-separated list of attributes to return (default: dn)"
   echo "  --timeout=SECONDS    Connection timeout in seconds (default: 10)"
@@ -97,9 +122,55 @@ fi
 # Build the ldapsearch command
 LDAPSEARCH_CMD="ldapsearch -o ldif-wrap=no -H ldaps://$SERVER:$PORT -b \"$BASE_DN\" -l $TIMEOUT"
 
-# Add authentication if provided
-if [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
-  echo "Using authentication with username: $USERNAME"
+# Handle authentication based on method
+if [ "$AUTH_METHOD" = "kerberos" ]; then
+  # Check if Kerberos tools are installed
+  if ! command -v klist &> /dev/null || ! command -v kinit &> /dev/null; then
+    echo "Error: Kerberos tools (kinit, klist) not found. Please install Kerberos client tools."
+    echo "  For Debian/Ubuntu: apt-get install krb5-user"
+    echo "  For RedHat/CentOS: yum install krb5-workstation"
+    exit 7
+  fi
+  
+  # Validate keytab
+  if [ -z "$KEYTAB" ] || [ ! -f "$KEYTAB" ]; then
+    echo "Error: Keytab file not found at '$KEYTAB'"
+    exit 1
+  fi
+
+  echo "Using Kerberos authentication with keytab: $KEYTAB"
+  
+  # Set GSSAPI options
+  LDAPSEARCH_CMD="$LDAPSEARCH_CMD -Y GSSAPI"
+  
+  # Set keytab environment variable
+  export KRB5_CLIENT_KTNAME="$KEYTAB"
+  
+  # If principal is provided, use it
+  if [ -n "$PRINCIPAL" ]; then
+    echo "Using principal: $PRINCIPAL"
+    # Set principal environment variable 
+    export KRB5PRINCIPAL="$PRINCIPAL"
+  else
+    # Try to get default principal from keytab
+    DEFAULT_PRINCIPAL=$(klist -k "$KEYTAB" 2>/dev/null | tail -n 1 | awk '{print $2}')
+    if [ -n "$DEFAULT_PRINCIPAL" ]; then
+      echo "Using default principal from keytab: $DEFAULT_PRINCIPAL"
+      export KRB5PRINCIPAL="$DEFAULT_PRINCIPAL"
+    fi
+  fi
+  
+  # If realm is provided, use it
+  if [ -n "$REALM" ]; then
+    echo "Using realm: $REALM"
+    export KRB5REALM="$REALM"
+  fi
+  
+  # Add SASL options
+  LDAPSEARCH_CMD="$LDAPSEARCH_CMD -Q"
+  
+elif [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
+  echo "Using simple authentication with username: $USERNAME"
   LDAPSEARCH_CMD="$LDAPSEARCH_CMD -D \"$USERNAME\" -w \"$PASSWORD\""
 else
   echo "Using anonymous bind"
@@ -194,6 +265,10 @@ else
     echo "Connection error:"
     echo "$RESULT" | grep -i "connection" | head -3
     exit 3
+  elif echo "$RESULT" | grep -i "gssapi" > /dev/null || echo "$RESULT" | grep -i "kerberos" > /dev/null; then
+    echo "Kerberos authentication error:"
+    echo "$RESULT" | grep -i -E "gssapi|kerberos" | head -3
+    exit 5
   else
     echo "Search failed:"
     echo "$RESULT" | head -5
