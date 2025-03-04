@@ -36,12 +36,16 @@ Cmnd_Alias NETWORK_COMMANDS = \
 Cmnd_Alias DHCP_COMMANDS = \
     /sbin/dhclient -r *, \
     /sbin/dhclient -v *, \
+    /sbin/dhclient *, \
     /usr/sbin/dhclient -r *, \
     /usr/sbin/dhclient -v *, \
+    /usr/sbin/dhclient *, \
     /sbin/dhcpcd -k *, \
     /sbin/dhcpcd -t * *, \
+    /sbin/dhcpcd *, \
     /usr/sbin/dhcpcd -k *, \
-    /usr/sbin/dhcpcd -t * *
+    /usr/sbin/dhcpcd -t * *, \
+    /usr/sbin/dhcpcd *
 
 # Command aliases for DNS operations
 Cmnd_Alias DNS_COMMANDS = \

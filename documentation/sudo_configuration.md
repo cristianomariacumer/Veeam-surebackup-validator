@@ -40,12 +40,16 @@ Cmnd_Alias NETWORK_COMMANDS = \
 Cmnd_Alias DHCP_COMMANDS = \
     /sbin/dhclient -r *, \
     /sbin/dhclient -v *, \
+    /sbin/dhclient *, \
     /usr/sbin/dhclient -r *, \
     /usr/sbin/dhclient -v *, \
+    /usr/sbin/dhclient *, \
     /sbin/dhcpcd -k *, \
     /sbin/dhcpcd -t * *, \
+    /sbin/dhcpcd *, \
     /usr/sbin/dhcpcd -k *, \
-    /usr/sbin/dhcpcd -t * *
+    /usr/sbin/dhcpcd -t * *, \
+    /usr/sbin/dhcpcd *
 
 # Command aliases for DNS operations
 Cmnd_Alias DNS_COMMANDS = \
@@ -69,3 +73,22 @@ validator ALL=(ALL) NOPASSWD: NETWORK_COMMANDS, DHCP_COMMANDS, DNS_COMMANDS, TIM
 - If you modify any of the test scripts to use additional commands, you'll need to update the sudoers file accordingly
 - Always verify the syntax of sudoers files using `visudo -c` before applying them
 - Path validation is important to ensure the commands referenced in the sudoers file match the system paths 
+
+## Command Permissions
+
+The sudo configuration includes permissions for several types of operations:
+
+### Network Interface Operations
+- Checking interface status
+- Bringing interfaces up and down
+- Querying IP information
+
+### DHCP Client Operations
+- Releasing DHCP leases (`dhclient -r`, `dhcpcd -k`)
+- Requesting new DHCP leases (`dhclient -v`, `dhcpcd -t`)
+- Restoring IP configuration (`dhclient`, `dhcpcd` without flags)
+
+### DNS and Connectivity Testing
+- DNS resolution testing
+- Reading DNS configuration
+- Ping tests to verify connectivity 
