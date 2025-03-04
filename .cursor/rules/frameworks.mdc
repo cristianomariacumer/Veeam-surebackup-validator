@@ -1,0 +1,11 @@
+---
+description: Code Guidelines
+globs: 
+---
+
+# Use Flask Restfull as library for API calls
+
+- Use Flask Restfull as library for API calls
+- Write code that can run on both linux and windows
+
+

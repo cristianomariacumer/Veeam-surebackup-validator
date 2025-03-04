@@ -1,93 +1,249 @@
-# Backup Tester
+# Backup Validator
 
+A multi-OS tool built with Flask-RESTful that executes scripts on the host machine and returns their status via REST API calls.
 
+## Features
 
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.scientificnet.org/ssn/backup-tester.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://gitlab.scientificnet.org/ssn/backup-tester/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+- Works on both Linux and Windows platforms
+- RESTful API for script execution
+- Passes URL parameters to scripts
+- Returns appropriate HTTP status codes:
+  - 200 OK if the script exits successfully
+  - 500 with error text if the script fails
+  - 404 if the script is not found
+- Path security validation to prevent directory traversal attacks
+- Advanced logging with rotation using Loguru
 
 ## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+
+1. Clone this repository:
+   ```
+   git clone https://github.com/yourusername/backup-validator.git
+   cd backup-validator
+   ```
+
+2. Create and activate a virtual environment (optional but recommended):
+   
+   **Linux/macOS:**
+   ```
+   python -m venv venv
+   source venv/bin/activate
+   ```
+   
+   **Windows:**
+   ```
+   python -m venv venv
+   venv\Scripts\activate
+   ```
+
+3. Install required packages:
+   ```
+   pip install -r requirements.txt
+   ```
+
+### Installing as a System Service
+
+On Linux systems using systemd (most modern distributions), you can install Backup Validator as a system service:
+
+1. Make the installation script executable:
+   ```
+   chmod +x install-service.sh
+   ```
+
+2. Run the installation script as root:
+   ```
+   sudo ./install-service.sh
+   ```
+
+This will:
+- Copy all necessary files to `/opt/backup-validator/`
+- Create a Python virtual environment in `/opt/backup-validator/venv/`
+- Install required Python dependencies in the virtual environment
+- Install Gunicorn WSGI server for production deployment
+- Create a service user named `validator`
+- Create and enable a systemd service
+- Start the service automatically
+
+The systemd service is configured to use Gunicorn with the Python interpreter from the virtual environment, ensuring all dependencies are properly available and the application runs in a production-ready environment.
+
+After installation, you can manage the service with standard systemd commands:
+```
+sudo systemctl status backup-validator
+sudo systemctl start backup-validator
+sudo systemctl stop backup-validator
+sudo systemctl restart backup-validator
+```
+
+To view service logs:
+```
+sudo journalctl -u backup-validator -f
+```
+
+#### Customizing the Service
+
+If you need to customize the service settings (such as the port or host address), edit the systemd unit file:
+```
+sudo systemctl stop backup-validator
+sudo vi /etc/systemd/system/backup-validator.service
+sudo systemctl daemon-reload
+sudo systemctl start backup-validator
+```
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### Starting the Server
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+#### Development Mode
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+For development, you can run the server directly with Flask:
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+```
+python app.py
+```
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+By default, the server listens on `0.0.0.0:5000`. You can configure this by setting environment variables:
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+- `HOST`: Host to bind to (default: `0.0.0.0`)
+- `PORT`: Port to listen on (default: `5000`)
+- `FLASK_DEBUG`: Set to `true` to enable debug mode (default: `false`)
+
+#### Production Mode
+
+For production deployment, it's recommended to use Gunicorn:
+
+```
+pip install gunicorn
+gunicorn --bind 0.0.0.0:5000 --workers 3 app:app
+```
+
+This provides better performance, stability, and security compared to Flask's built-in development server.
+
+### API Endpoints
+
+#### Execute a Script
+
+```
+GET /backup-validator/{script-name}?param1=value1&param2=value2
+```
+
+- `{script-name}`: Name of the script to execute (without extension)
+- URL parameters are passed to the script as command-line arguments in the format `--param=value`
+
+#### Health Check
+
+```
+GET /health
+```
+
+Returns `{"status": "ok"}` with status code 200 if the service is running.
+
+### Adding Scripts
+
+Place your scripts in the `scripts` directory:
+
+- For Linux/macOS: Make sure the scripts are executable (`chmod +x script_name`)
+- For Windows: Use `.bat`, `.cmd`, or `.ps1` extensions
+
+## Example
+
+1. Place a script named `sample_test.sh` (Linux/macOS) or `sample_test.bat` (Windows) in the `scripts` directory
+2. Make a request:
+   ```
+   curl "http://localhost:5000/backup-validator/sample_test?message=Hello%20World&fail=false"
+   ```
+3. Expected response:
+   ```json
+   {
+     "status": "success",
+     "message": "Hello World"
+   }
+   ```
+
+If you set `fail=true`, you'll get:
+```json
+{
+  "status": "error",
+  "message": "Error: Script failed as requested"
+}
+```
+
+## Available Test Scripts
+
+The Backup Validator includes several pre-configured test scripts for common network and authentication services:
+
+### [DNS Test](documentation/dns_test.md)
+
+Tests if a hostname resolves to the expected IP address. Works on both Linux/macOS and Windows.
+
+### [DHCP Test](documentation/dhcp_test.md)
+
+Tests if DHCP is working properly on a specified network interface. Available for Linux systems.
+
+**Note:** This script requires sudo privileges. See [Sudo Configuration](documentation/sudo_configuration.md) for setup.
+
+### [Kerberos Test](documentation/kerberos_test.md)
+
+Verifies if provided credentials can be used to obtain a valid Kerberos ticket. Available for Linux systems with Kerberos client tools installed.
+
+### [LDAPS Test](documentation/ldaps_test.md)
+
+Checks connectivity to a domain controller or LDAP server over SSL. Available for Linux systems with OpenLDAP client tools installed.
+
+## Security Considerations
+
+- The tool executes scripts on the host machine, so it should only be deployed in a trusted environment.
+- Consider implementing authentication/authorization if deploying in a production environment.
+- Restrict network access to the API endpoints to trusted clients.
+- Some scripts require elevated privileges (sudo). Be sure to review and understand the sudo permissions granted in the [Sudo Configuration](documentation/sudo_configuration.md).
+
+## Logging
+
+The application uses Loguru for advanced logging capabilities:
+
+- Console logs are displayed in a readable format
+- File logs are stored in the `logs` directory
+- Log files are automatically rotated when they reach 10MB
+- Old logs are deleted after 1 week
+
+You can customize the logging behavior by modifying the Loguru configuration in `app.py`.
+
+## IP Whitelisting
+
+The Backup Validator service supports IP whitelisting to restrict access to authorized clients only. By default, the service allows connections from:
+- localhost (127.0.0.1, ::1)
+- Private network ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+
+### Configuration Options
+
+You can customize the allowed IPs using one of these methods:
+
+1. **Environment Variable**:
+   ```
+   export ALLOWED_IPS="192.168.1.10,192.168.1.11,10.0.0.0/24"
+   ```
+
+2. **Configuration File**:
+   Create a file named `allowed_ips.conf` in the application directory with one IP or network per line:
+   ```
+   # Allow specific hosts
+   192.168.1.10
+   # Allow a subnet
+   10.0.0.0/24
+   ```
+
+   You can specify a different config file path with:
+   ```
+   export ALLOWED_IPS_FILE="/etc/backup-validator/allowed_ips.conf"
+   ```
+
+3. **Proxy Support**:
+   If the application is behind a proxy, enable trust for the X-Forwarded-For header:
+   ```
+   export TRUST_PROXY="true"
+   ```
+
+Requests from unauthorized IPs will receive a 403 Forbidden response.
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+[MIT License](LICENSE)

@@ -1,0 +1,31 @@
+[Unit]
+Description=Backup Validator REST API Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=validator
+WorkingDirectory=/opt/tester/backup-tester
+# Use Gunicorn with the virtual environment Python
+ExecStart=/opt/tester/backup-tester/.venv/bin/gunicorn --bind 0.0.0.0:5000 --workers 3 app:app
+Restart=on-failure
+RestartSec=10
+Environment="FLASK_DEBUG=false"
+
+# Optional security enhancements
+# Uncomment these if you don't need to access the entire filesystem
+#ProtectSystem=full
+#ProtectHome=true
+#PrivateTmp=true
+
+# Create runtime directories
+RuntimeDirectory=backup-validator
+RuntimeDirectoryMode=0755
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target 
