@@ -167,229 +167,34 @@ If you set `fail=true`, you'll get:
 }
 ```
 
-## Example Scripts
+## Available Test Scripts
 
-### DNS Test
+The Backup Validator includes several pre-configured test scripts for common network and authentication services:
 
-The tool includes a DNS resolution test script that checks if a hostname resolves to the expected IP address. It works on both Linux/macOS and Windows.
+### [DNS Test](documentation/dns_test.md)
 
-#### Usage
+Tests if a hostname resolves to the expected IP address. Works on both Linux/macOS and Windows.
 
-```
-GET /backup-validator/dns_test?hostname=example.com&expected-ip=93.184.216.34&dns-server=8.8.8.8
-```
+### [DHCP Test](documentation/dhcp_test.md)
 
-Parameters:
-- `hostname` (required): The hostname to resolve
-- `expected-ip` (required): The expected IP address
-- `dns-server` (optional): The DNS server to use for resolution (defaults to system DNS)
+Tests if DHCP is working properly on a specified network interface. Available for Linux systems.
 
-#### Response Examples
+**Note:** This script requires sudo privileges. See [Sudo Configuration](documentation/sudo_configuration.md) for setup.
 
-Success:
-```json
-{
-  "status": "success",
-  "message": "Testing DNS resolution for example.com (expected: 93.184.216.34)\nResolved IP: 93.184.216.34\nSuccess: example.com resolved to expected IP 93.184.216.34"
-}
-```
+### [Kerberos Test](documentation/kerberos_test.md)
 
-Error (IP mismatch):
-```json
-{
-  "status": "error",
-  "message": "Testing DNS resolution for example.com (expected: 1.2.3.4)\nResolved IP: 93.184.216.34\nError: example.com resolved to 93.184.216.34 (expected: 1.2.3.4)"
-}
-```
+Verifies if provided credentials can be used to obtain a valid Kerberos ticket. Available for Linux systems with Kerberos client tools installed.
 
-Error (hostname doesn't exist):
-```json
-{
-  "status": "error",
-  "message": "Testing DNS resolution for nonexistent.example.com (expected: 1.2.3.4)\nError: Could not resolve nonexistent.example.com"
-}
-```
+### [LDAPS Test](documentation/ldaps_test.md)
 
-### DHCP Test
-
-The tool includes a DHCP test script that checks if DHCP is working properly on a specified network interface. This script is available for Linux systems.
-
-**Note:** This script requires sudo privileges to interact with network interfaces and DHCP clients. See the [Sudo Configuration](#sudo-configuration) section for setup instructions.
-
-#### Usage
-
-```
-GET /backup-validator/dhcp_test?interface=eth0&timeout=30&expected-subnet=192.168.1
-```
-
-Parameters:
-- `interface` (required): The network interface to test (e.g., eth0, wlan0)
-- `timeout` (optional): The timeout in seconds for DHCP request (default: 30)
-- `expected-subnet` (optional): The expected subnet prefix for the assigned IP (e.g., 192.168.1)
-
-#### Response Examples
-
-Success:
-```json
-{
-  "status": "success",
-  "message": "Testing DHCP on interface eth0 (timeout: 30s)\nInitial IP address: 192.168.1.100\nResetting interface eth0...\nReleasing DHCP lease...\nRequesting a new DHCP lease (timeout: 30s)...\nNew IP address: 192.168.1.120\nIP address is within expected subnet 192.168.1\nDefault gateway: 192.168.1.1\nTesting connectivity to gateway...\nSuccessfully pinged gateway\nDNS servers:\n8.8.8.8\n8.8.4.4\nTesting internet connectivity...\nInternet connectivity: OK\nTesting DNS resolution...\nDNS resolution: OK\nDHCP test completed successfully"
-}
-```
-
-Error (DHCP failure):
-```json
-{
-  "status": "error",
-  "message": "Testing DHCP on interface eth0 (timeout: 30s)\nNo initial IP address assigned\nResetting interface eth0...\nRequesting a new DHCP lease (timeout: 30s)...\nError: Failed to obtain DHCP lease"
-}
-```
-
-Error (wrong subnet):
-```json
-{
-  "status": "error",
-  "message": "Testing DHCP on interface eth0 (timeout: 30s)\nInitial IP address: 192.168.1.100\nResetting interface eth0...\nReleasing DHCP lease...\nRequesting a new DHCP lease (timeout: 30s)...\nNew IP address: 192.168.2.120\nError: IP address 192.168.2.120 is not in the expected subnet 192.168.1"
-}
-```
-
-### Kerberos Test
-
-The tool includes a Kerberos authentication test script that verifies if provided credentials can be used to obtain a valid Kerberos ticket. This script is available for Linux systems with Kerberos client tools installed.
-
-**Note:** This script requires the Kerberos client tools (kinit, klist, etc.) to be installed on the system.
-
-#### Usage
-
-```
-GET /backup-validator/kerberos_test?username=user&password=pass&realm=EXAMPLE.COM&kdc=kdc.example.com&test-service=host/server.example.com
-```
-
-Parameters:
-- `username` (required*): The Kerberos principal name (user)
-- `password` (required*): The password for the principal
-- `realm` (required): The Kerberos realm (usually uppercase, e.g., EXAMPLE.COM)
-- `kdc` (optional): The Key Distribution Center server (if different from the default)
-- `keytab` (optional*): Path to a keytab file (alternative to username/password)
-- `test-service` (optional): A service principal to test obtaining a service ticket
-
-*Either username+password OR keytab must be provided
-
-#### Response Examples
-
-Success:
-```json
-{
-  "status": "success",
-  "message": "Testing Kerberos authentication for realm: EXAMPLE.COM\nAuthenticating with username: user\nSuccessfully obtained Kerberos ticket\nTicket information:\nTicket cache: FILE:/tmp/krb5cc_1000\nDefault principal: user@EXAMPLE.COM\n\nValid starting       Expires              Service principal\n05/15/2023 10:00:00  05/15/2023 20:00:00  krbtgt/EXAMPLE.COM@EXAMPLE.COM\nKerberos test completed successfully"
-}
-```
-
-Error (authentication failure):
-```json
-{
-  "status": "error",
-  "message": "Testing Kerberos authentication for realm: EXAMPLE.COM\nAuthenticating with username: user\nError: Failed to authenticate with Kerberos"
-}
-```
-
-Error (missing Kerberos tools):
-```json
-{
-  "status": "error",
-  "message": "Error: 'kinit' command not found. Please install Kerberos client tools.\n  For Debian/Ubuntu: apt-get install krb5-user\n  For RedHat/CentOS: yum install krb5-workstation"
-}
-```
-
-### LDAPS Test
-
-The tool includes an LDAPS (LDAP over SSL) test script that checks connectivity to a domain controller or LDAP server. This script is available for Linux systems with OpenLDAP client tools installed.
-
-**Note:** This script requires the OpenLDAP client tools (`ldapsearch`) to be installed on the system.
-
-#### Usage
-
-```
-GET /backup-validator/ldaps_test?server=ldap.example.com&base-dn=dc=example,dc=com&username=cn=admin,dc=example,dc=com&password=secret
-```
-
-Parameters:
-- `server` (required): The LDAP server hostname or IP address
-- `base-dn` (required): Base DN for search (e.g., dc=example,dc=com)
-- `port` (optional): LDAPS port (default: 636)
-- `username` (optional): Bind DN for authentication
-- `password` (optional): Password for authentication
-- `search-filter` (optional): LDAP search filter (default: (objectClass=*))
-- `attrs` (optional): Comma-separated list of attributes to return (default: dn)
-- `timeout` (optional): Connection timeout in seconds (default: 10)
-- `verify-cert` (optional): Whether to verify SSL certificate (default: true)
-
-#### Response Examples
-
-Success:
-```json
-{
-  "status": "success",
-  "message": "Testing LDAPS connectivity to ldap.example.com:636\nBase DN: dc=example,dc=com\nUsing authentication with username: cn=admin,dc=example,dc=com\nCertificate verification enabled\nTesting LDAPS connection...\nChecking certificate expiration...\nnotBefore=Jan  1 00:00:00 2023 GMT\nnotAfter=Dec 31 23:59:59 2023 GMT\nCurrent date: Thu Jun 1 12:34:56 UTC 2023\nCertificate is valid. Days until expiration: 213\nExecuting LDAP search with filter: (objectClass=*)\nSuccessfully connected and searched the directory.\nFound 5 entries.\nSample result:\ndn: dc=example,dc=com\nobjectClass: dcObject\nobjectClass: organization\n\nLDAPS test completed successfully."
-}
-```
-
-Error (connection failure):
-```json
-{
-  "status": "error",
-  "message": "Testing LDAPS connectivity to nonexistent.example.com:636\nBase DN: dc=example,dc=com\nUsing anonymous bind\nCertificate verification enabled\nTesting LDAPS connection...\nError: Failed to establish SSL connection to nonexistent.example.com:636\nconnect:errno=111"
-}
-```
-
-Error (authentication failure):
-```json
-{
-  "status": "error",
-  "message": "Testing LDAPS connectivity to ldap.example.com:636\nBase DN: dc=example,dc=com\nUsing authentication with username: cn=admin,dc=example,dc=com\nCertificate verification enabled\nTesting LDAPS connection...\nChecking certificate expiration...\nnotBefore=Jan  1 00:00:00 2023 GMT\nnotAfter=Dec 31 23:59:59 2023 GMT\nCurrent date: Thu Jun 1 12:34:56 UTC 2023\nCertificate is valid. Days until expiration: 213\nExecuting LDAP search with filter: (objectClass=*)\nError: LDAP search failed with status code 49\nAuthentication failed. Please check username and password."
-}
-```
-
-Error (certificate validation):
-```json
-{
-  "status": "error",
-  "message": "Testing LDAPS connectivity to ldap.example.com:636\nBase DN: dc=example,dc=com\nUsing anonymous bind\nCertificate verification enabled\nTesting LDAPS connection...\nChecking certificate expiration...\nError: Certificate has expired!"
-}
-```
+Checks connectivity to a domain controller or LDAP server over SSL. Available for Linux systems with OpenLDAP client tools installed.
 
 ## Security Considerations
 
 - The tool executes scripts on the host machine, so it should only be deployed in a trusted environment.
 - Consider implementing authentication/authorization if deploying in a production environment.
 - Restrict network access to the API endpoints to trusted clients.
-- Some scripts require elevated privileges (sudo). Be sure to review and understand the sudo permissions granted.
-
-## Sudo Configuration
-
-Some scripts (such as the DHCP test) require root privileges to function correctly. Since the service runs as the unprivileged user `validator`, sudo rules are needed to allow specific privileged operations.
-
-### Setting up sudo for DHCP Testing
-
-1. Make the setup script executable:
-   ```
-   chmod +x setup-dhcp-sudo.sh
-   ```
-
-2. Run the setup script as root:
-   ```
-   sudo ./setup-dhcp-sudo.sh
-   ```
-
-This will:
-- Create a sudoers configuration file at `/etc/sudoers.d/validator-dhcp`
-- Configure necessary permissions for the `validator` user to run the required network commands
-- Verify the syntax of the sudoers file to prevent system issues
-- Check and warn about path inconsistencies that might need manual adjustment
-
-The configuration allows the validator user to run only the specific commands needed for DHCP testing without a password, following the principle of least privilege.
-
-If you modify the DHCP test script to use additional commands, you'll need to update the sudoers file accordingly.
+- Some scripts require elevated privileges (sudo). Be sure to review and understand the sudo permissions granted in the [Sudo Configuration](documentation/sudo_configuration.md).
 
 ## Logging
 
