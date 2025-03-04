@@ -11,6 +11,8 @@ A multi-OS tool built with Flask-RESTful that executes scripts on the host machi
   - 200 OK if the script exits successfully
   - 500 with error text if the script fails
   - 404 if the script is not found
+- Path security validation to prevent directory traversal attacks
+- Advanced logging with rotation using Loguru
 
 ## Installation
 
@@ -109,6 +111,17 @@ If you set `fail=true`, you'll get:
 - The tool executes scripts on the host machine, so it should only be deployed in a trusted environment.
 - Consider implementing authentication/authorization if deploying in a production environment.
 - Restrict network access to the API endpoints to trusted clients.
+
+## Logging
+
+The application uses Loguru for advanced logging capabilities:
+
+- Console logs are displayed in a readable format
+- File logs are stored in the `logs` directory
+- Log files are automatically rotated when they reach 10MB
+- Old logs are deleted after 1 week
+
+You can customize the logging behavior by modifying the Loguru configuration in `app.py`.
 
 ## License
 

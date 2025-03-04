@@ -7,8 +7,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Create scripts directory
-RUN mkdir -p scripts
+# Create necessary directories
+RUN mkdir -p scripts logs
 
 # Make all scripts executable
 RUN if [ -d "scripts" ]; then chmod +x scripts/*; fi
