@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  backup-validator:
+    build: .
+    container_name: backup-validator
+    ports:
+      - "5000:5000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5000
+      - FLASK_DEBUG=false
+    volumes:
+      - ./scripts:/app/scripts
+    restart: unless-stopped 
