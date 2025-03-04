@@ -110,12 +110,30 @@ is_ip_in_subnet() {
     # CIDR notation (e.g., 192.168.1.0/24)
     # Use ipcalc or sipcalc if available
     if command -v ipcalc &>/dev/null; then
-      if ipcalc -c "$ip" "$subnet" &>/dev/null; then
-        return 0
-      else
-        return 1
+      # Test if ipcalc supports -c (GNU ipcalc) or -n (BSD ipcalc)
+      if ipcalc -h 2>&1 | grep -q "\-c"; then
+        # GNU ipcalc
+        if ipcalc -c "$ip" "$subnet" &>/dev/null; then
+          return 0
+        else
+          return 1
+        fi
+      elif ipcalc -h 2>&1 | grep -q "\-n"; then
+        # BSD ipcalc
+        local network=$(ipcalc -n "$subnet" | awk '{print $2}')
+        local mask=$(ipcalc -m "$subnet" | awk '{print $2}')
+        
+        # Check if the IP is in the subnet
+        if ipcalc "$ip" "$mask" | grep -q "Network.*$network"; then
+          return 0
+        else
+          return 1
+        fi
       fi
-    elif command -v sipcalc &>/dev/null; then
+    fi
+    
+    # Try sipcalc if ipcalc failed or wasn't appropriate
+    if command -v sipcalc &>/dev/null; then
       local network=$(sipcalc "$subnet" | grep "Network address" | head -1 | awk '{print $NF}')
       local broadcast=$(sipcalc "$subnet" | grep "Broadcast address" | head -1 | awk '{print $NF}')
       
@@ -177,6 +195,16 @@ if [ -n "$expected_subnet" ]; then
     echo "IP address is within expected subnet $expected_subnet"
   else
     echo "Error: IP address $new_ip is not in the expected subnet $expected_subnet" >&2
+    
+    # Release the IP before exiting with error
+    if command -v dhclient &>/dev/null; then
+      echo "Releasing DHCP lease before exit..."
+      sudo dhclient -r "$interface" &>/dev/null || true
+    elif command -v dhcpcd &>/dev/null; then
+      echo "Releasing DHCP lease before exit..."
+      sudo dhcpcd -k "$interface" &>/dev/null || true
+    fi
+    
     exit 4
   fi
 fi
@@ -219,4 +247,23 @@ fi
 
 # Report success
 echo "DHCP test completed successfully"
+
+# Release the IP address at the end of the test
+echo "Releasing DHCP lease at end of test..."
+if command -v dhclient &>/dev/null; then
+  sudo dhclient -r "$interface" &>/dev/null
+elif command -v dhcpcd &>/dev/null; then
+  sudo dhcpcd -k "$interface" &>/dev/null
+fi
+
+# Optionally restore the initial state if there was an initial IP
+if [ -n "$initial_ip" ]; then
+  echo "Requesting restoration of original IP configuration..."
+  if command -v dhclient &>/dev/null; then
+    sudo dhclient "$interface" &>/dev/null
+  elif command -v dhcpcd &>/dev/null; then
+    sudo dhcpcd "$interface" &>/dev/null
+  fi
+fi
+
 exit 0 
