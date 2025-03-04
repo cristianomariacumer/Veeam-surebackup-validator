@@ -1,0 +1,18 @@
+# Backup Validator IP Whitelist Configuration
+# 
+# This file defines IP addresses and networks that are allowed to connect to the Backup Validator service.
+# Each line should contain a single IP address or network in CIDR notation.
+# Lines starting with # are treated as comments.
+
+# Allow localhost
+127.0.0.1
+::1
+
+# Allow private networks 
+10.0.0.0/8      # Class A private network
+172.16.0.0/12   # Class B private network
+192.168.0.0/16  # Class C private network
+
+# Examples of specific hosts and networks - uncomment and modify as needed
+# 192.168.1.10    # Specific host
+# 192.168.5.0/24  # Specific subnet 
