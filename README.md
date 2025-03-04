@@ -41,11 +41,61 @@ A multi-OS tool built with Flask-RESTful that executes scripts on the host machi
    pip install -r requirements.txt
    ```
 
+### Installing as a System Service
+
+On Linux systems using systemd (most modern distributions), you can install Backup Validator as a system service:
+
+1. Make the installation script executable:
+   ```
+   chmod +x install-service.sh
+   ```
+
+2. Run the installation script as root:
+   ```
+   sudo ./install-service.sh
+   ```
+
+This will:
+- Copy all necessary files to `/opt/backup-validator/`
+- Create a Python virtual environment in `/opt/backup-validator/venv/`
+- Install required Python dependencies in the virtual environment
+- Install Gunicorn WSGI server for production deployment
+- Create a service user named `validator`
+- Create and enable a systemd service
+- Start the service automatically
+
+The systemd service is configured to use Gunicorn with the Python interpreter from the virtual environment, ensuring all dependencies are properly available and the application runs in a production-ready environment.
+
+After installation, you can manage the service with standard systemd commands:
+```
+sudo systemctl status backup-validator
+sudo systemctl start backup-validator
+sudo systemctl stop backup-validator
+sudo systemctl restart backup-validator
+```
+
+To view service logs:
+```
+sudo journalctl -u backup-validator -f
+```
+
+#### Customizing the Service
+
+If you need to customize the service settings (such as the port or host address), edit the systemd unit file:
+```
+sudo systemctl stop backup-validator
+sudo vi /etc/systemd/system/backup-validator.service
+sudo systemctl daemon-reload
+sudo systemctl start backup-validator
+```
+
 ## Usage
 
 ### Starting the Server
 
-Run the following command to start the server:
+#### Development Mode
+
+For development, you can run the server directly with Flask:
 
 ```
 python app.py
@@ -56,6 +106,17 @@ By default, the server listens on `0.0.0.0:5000`. You can configure this by sett
 - `HOST`: Host to bind to (default: `0.0.0.0`)
 - `PORT`: Port to listen on (default: `5000`)
 - `FLASK_DEBUG`: Set to `true` to enable debug mode (default: `false`)
+
+#### Production Mode
+
+For production deployment, it's recommended to use Gunicorn:
+
+```
+pip install gunicorn
+gunicorn --bind 0.0.0.0:5000 --workers 3 app:app
+```
+
+This provides better performance, stability, and security compared to Flask's built-in development server.
 
 ### API Endpoints
 
