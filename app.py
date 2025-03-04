@@ -5,6 +5,12 @@ from flask import Flask, request
 from flask_restful import Resource, Api
 from loguru import logger
 
+# Create logs directory if it doesn't exist
+os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs'), exist_ok=True)
+    
+# Create scripts directory if it doesn't exist
+os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts'), exist_ok=True)
+
 # Configure Loguru logger
 logger.remove()  # Remove default handler
 logger.add(
@@ -109,12 +115,6 @@ def health_check():
     return {'status': 'ok'}, 200
 
 if __name__ == '__main__':
-    # Create logs directory if it doesn't exist
-    os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs'), exist_ok=True)
-    
-    # Create scripts directory if it doesn't exist
-    os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts'), exist_ok=True)
-    
     # Get host and port from environment variables or use defaults
     host = os.environ.get('HOST', '0.0.0.0')
     port = int(os.environ.get('PORT', 5001))
