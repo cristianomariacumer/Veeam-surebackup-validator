@@ -262,4 +262,4 @@ Requests from unauthorized IPs will receive a 403 Forbidden response.
 
 ## License
 
-[MIT License](LICENSE)
+[European Union Public License v1.2 (EUPL v1.2)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
