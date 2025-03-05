@@ -1,4 +1,19 @@
 @echo off
+:: Copyright (C) 2025 Libera Universita' di Bolzano
+::
+:: This program is free software: you can redistribute it and/or modify
+:: it under the terms of the European Union Public License v. 1.2, as 
+:: published by the European Commission.
+::
+:: You should have received a copy of the EUPL v1.2 license
+:: along with this program. If not, you can find it at:
+:: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+::
+:: Unless required by applicable law or agreed to in writing, software
+:: distributed under the EUPL v1.2 is distributed on an "AS IS" basis,
+:: WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+:: See the EUPL v1.2 for more details.
+
 :: DNS Test Script - Tests if a hostname resolves to the expected IP address
 
 setlocal enabledelayedexpansion
