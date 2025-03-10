@@ -120,6 +120,19 @@ This provides better performance, stability, and security compared to Flask's bu
 
 ### API Endpoints
 
+#### API Documentation (Swagger UI)
+
+The API documentation is available through Swagger UI at:
+
+```
+http://localhost:5000/api/docs
+```
+
+This interactive documentation allows you to:
+- Explore all available endpoints
+- Test API calls directly from the browser
+- View request and response schemas
+
 #### Execute a Script
 
 The script execution endpoint supports both GET and POST requests:

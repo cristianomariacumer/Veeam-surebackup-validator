@@ -2,7 +2,7 @@
 Copyright (C) 2025 Libera Universita' di Bolzano
 
 This program is free software: you can redistribute it and/or modify
-it under the terms of the European Union Public License v. 1.2, as 
+it under the terms of the European Union Public License v. 1.2, as
 published by the European Commission.
 
 You should have received a copy of the EUPL v1.2 license
@@ -22,23 +22,18 @@ import ipaddress
 import re
 from flask import Flask, request, abort
 from flask_restful import Resource, Api
+from flask_swagger_ui import get_swaggerui_blueprint
 from loguru import logger
 
 # Create logs directory if it doesn't exist
-os.makedirs(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs"), exist_ok=True
-)
+os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs"), exist_ok=True)
 
 # Create scripts directory if it doesn't exist
-os.makedirs(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts"), exist_ok=True
-)
+os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts"), exist_ok=True)
 
 # Configure Loguru logger
 logger.remove()  # Remove default handler
-logger.add(
-    sys.stderr, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}", level="INFO"
-)
+logger.add(sys.stderr, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}", level="INFO")
 logger.add(
     "logs/backup-validator.log",
     rotation="10 MB",
@@ -49,6 +44,22 @@ logger.add(
 
 app = Flask(__name__)
 api = Api(app)
+
+# Configure Swagger UI
+SWAGGER_URL = "/api/docs"  # URL for exposing Swagger UI
+API_URL = "/static/swagger.json"  # Our API url (can of course be a local resource)
+
+# Call factory function to create our blueprint
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={  # Swagger UI config overrides
+        "app_name": "Backup Validator API"
+    },
+)
+
+# Register blueprint at URL
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 
 # Load IP whitelist from environment variable or config file
@@ -67,11 +78,7 @@ def load_ip_whitelist():
     if os.path.exists(whitelist_file):
         try:
             with open(whitelist_file, "r") as f:
-                return [
-                    line.strip()
-                    for line in f
-                    if line.strip() and not line.startswith("#")
-                ]
+                return [line.strip() for line in f if line.strip() and not line.startswith("#")]
         except Exception as e:
             logger.error(f"Error reading IP whitelist file: {e}")
 
@@ -200,23 +207,14 @@ class ScriptExecutor(Resource):
                 "X-Forwarded-For" in request.headers
                 and os.environ.get("TRUST_PROXY", "False").lower() == "true"
             ):
-                client_ip = (
-                    request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
-                )
+                client_ip = request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
 
             # Sanitize script name to prevent directory traversal
-            if (
-                not script_name
-                or "/" in script_name
-                or "\\" in script_name
-                or ".." in script_name
-            ):
+            if not script_name or "/" in script_name or "\\" in script_name or ".." in script_name:
                 return {"error": "Invalid script name"}, 400
 
             # Get the script directory
-            script_dir = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "scripts"
-            )
+            script_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts")
 
             # Construct full script path
             if sys.platform == "win32":
@@ -277,9 +275,7 @@ class ScriptExecutor(Resource):
                 return {"status": "success", "message": sanitized_output}, 200
             else:
                 error_message = (
-                    result.stderr.strip()
-                    or result.stdout.strip()
-                    or "Unknown error occurred"
+                    result.stderr.strip() or result.stdout.strip() or "Unknown error occurred"
                 )
                 # Obfuscate password in error messages
                 sanitized_error = self._sanitize_sensitive_data(error_message)
@@ -340,4 +336,3 @@ if __name__ == "__main__":
         port=port,
         debug=os.environ.get("FLASK_DEBUG", "False").lower() == "true",
     )
-
