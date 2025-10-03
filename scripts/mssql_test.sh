@@ -93,7 +93,7 @@ if ! command -v kinit >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! command -v sqlcmd >/dev/null 2>&1; then
+if ! command -v /opt/mssql-tools18/bin/sqlcmd >/dev/null 2>&1; then
   echo "Error: sqlcmd command not found (Microsoft ODBC Driver / mssql-tools package required)" >&2
   exit 1
 fi
@@ -139,7 +139,7 @@ fi
 
 echo "Executing query: $query"
 
-sqlcmd_cmd=(sqlcmd -S "$target" -b -W -h -1 -C)
+sqlcmd_cmd=(/opt/mssql-tools18/bin/sqlcmd -S "$target" -b -W -h -1 -C)
 if [[ -n "$database_name" ]]; then
   sqlcmd_cmd+=( -d "$database_name" )
 fi
