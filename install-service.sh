@@ -1,4 +1,19 @@
 #!/bin/bash
+# Copyright (C) 2025 Libera Universita' di Bolzano
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the European Union Public License v. 1.2, as 
+# published by the European Commission.
+#
+# You should have received a copy of the EUPL v1.2 license
+# along with this program. If not, you can find it at:
+# https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the EUPL v1.2 is distributed on an "AS IS" basis,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the EUPL v1.2 for more details.
+
 # Installation script for Backup Validator service
 
 # Ensure script is run as root
@@ -14,17 +29,19 @@ CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "Installing Backup Validator service..."
 
-# Create installation directory
-echo "Creating installation directory at $INSTALL_DIR"
+# Create necessary directories
+echo "Creating installation directories..."
 mkdir -p "$INSTALL_DIR"
 mkdir -p "$INSTALL_DIR/logs"
 mkdir -p "$INSTALL_DIR/scripts"
+mkdir -p "$INSTALL_DIR/static"
 
 # Copy application files
 echo "Copying application files..."
-cp -R "$CURRENT_DIR/"*.py "$INSTALL_DIR/"
-cp -R "$CURRENT_DIR/requirements.txt" "$INSTALL_DIR/"
-cp -R "$CURRENT_DIR/scripts/"* "$INSTALL_DIR/scripts/"
+cp -f "$CURRENT_DIR/app.py" "$INSTALL_DIR/"
+cp -f "$CURRENT_DIR/requirements.txt" "$INSTALL_DIR/"
+cp -rf "$CURRENT_DIR/scripts/"* "$INSTALL_DIR/scripts/"
+cp -f "$CURRENT_DIR/static/"* "$INSTALL_DIR/static/" 2>/dev/null || :
 
 # Set proper permissions
 echo "Setting permissions..."

@@ -1,0 +1,158 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Backup Validator API",
+    "description": "A multi-OS tool that executes scripts on the host machine and returns their status via REST API calls.",
+    "version": "1.0.0"
+  },
+  "basePath": "/",
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/backup-validator/{script-name}": {
+      "get": {
+        "summary": "Execute a script with GET parameters",
+        "description": "Executes the specified script with parameters passed as URL query parameters",
+        "parameters": [
+          {
+            "name": "script-name",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Name of the script to execute (without extension)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Script executed successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "success"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Script output message"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Script not found"
+          },
+          "500": {
+            "description": "Script execution failed",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "error"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Error message"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Execute a script with POST parameters",
+        "description": "Executes the specified script with parameters passed in the request body as JSON",
+        "parameters": [
+          {
+            "name": "script-name",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Name of the script to execute (without extension)"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "example": {
+                "param1": "value1",
+                "param2": "value2"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Script executed successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "success"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Script output message"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Script not found"
+          },
+          "500": {
+            "description": "Script execution failed",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "error"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Error message"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "description": "Returns a status indicating if the service is running",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "ok"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+} 
