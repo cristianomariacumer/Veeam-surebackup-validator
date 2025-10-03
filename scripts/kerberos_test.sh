@@ -120,7 +120,7 @@ if [ -n "$keytab" ]; then
     rm -f "$KRB5_CONFIG" 2>/dev/null
     exit 3
   fi
-  
+
   echo "Using principal: $principal"
   kinit -k -t "$keytab" "$principal" 2>&1
   KINIT_RESULT=$?
@@ -132,7 +132,7 @@ else
   else
     principal="${username}"
   fi
-  
+
   cat "$PASSWORD_FILE" | kinit "$principal" 2>&1
   KINIT_RESULT=$?
   rm -f "$PASSWORD_FILE" 2>/dev/null
@@ -170,4 +170,4 @@ fi
 # Destroy the ticket
 kdestroy
 echo "Kerberos test completed successfully"
-exit 0 
+exit 0 validator

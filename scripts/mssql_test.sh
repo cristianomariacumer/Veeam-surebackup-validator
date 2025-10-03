@@ -161,7 +161,8 @@ normalize() {
   printf '%s' "$1" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
-normalized_output=$(normalize "$sqlcmd_output")
+clean_output=$(printf '%s\n' "$sqlcmd_output" | sed '/^[[:space:]]*(.* rows affected)[[:space:]]*$/d' | sed '/^$/d')
+normalized_output=$(normalize "$clean_output")
 normalized_expected=$(normalize "$expected_result")
 
 echo "Query result: $normalized_output"
