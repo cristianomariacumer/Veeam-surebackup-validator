@@ -120,14 +120,43 @@ This provides better performance, stability, and security compared to Flask's bu
 
 ### API Endpoints
 
+#### API Documentation (Swagger UI)
+
+The API documentation is available through Swagger UI at:
+
+```
+http://localhost:5000/api/docs
+```
+
+This interactive documentation allows you to:
+- Explore all available endpoints
+- Test API calls directly from the browser
+- View request and response schemas
+
 #### Execute a Script
+
+The script execution endpoint supports both GET and POST requests:
 
 ```
 GET /backup-validator/{script-name}?param1=value1&param2=value2
 ```
 
+OR
+
+```
+POST /backup-validator/{script-name}
+Content-Type: application/json
+
+{
+  "param1": "value1", 
+  "param2": "value2"
+}
+```
+
 - `{script-name}`: Name of the script to execute (without extension)
-- URL parameters are passed to the script as command-line arguments in the format `--param=value`
+- Parameters can be provided either as URL query parameters (GET) or as a JSON object in the request body (POST)
+- In both cases, parameters are passed to the script as command-line arguments in the format `--param=value`
+- For sensitive information like passwords, using POST with JSON body is recommended
 
 #### Health Check
 
@@ -189,6 +218,10 @@ Verifies if provided credentials can be used to obtain a valid Kerberos ticket. 
 
 Checks connectivity to a domain controller or LDAP server over SSL. Available for Linux systems with OpenLDAP client tools installed.
 
+### [MSSQL Test](documentation/mssql_test.md)
+
+Runs a parametrised SQL query against Microsoft SQL Server using Kerberos keytab authentication via `sqlcmd`, then asserts the result matches an expected value.
+
 ## Security Considerations
 
 - The tool executes scripts on the host machine, so it should only be deployed in a trusted environment.
@@ -246,4 +279,4 @@ Requests from unauthorized IPs will receive a 403 Forbidden response.
 
 ## License
 
-[MIT License](LICENSE)
+[European Union Public License v1.2 (EUPL v1.2)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)

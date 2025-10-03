@@ -4,6 +4,15 @@ The LDAPS (LDAP over SSL) test script checks connectivity to a domain controller
 
 **Note:** This script requires the OpenLDAP client tools (`ldapsearch`) to be installed on the system. For Kerberos authentication, Kerberos client tools (`kinit`, `klist`) are also required.
 
+## Channek Binding
+
+On modern windows domain controllers channel binfin is in use. Please add those lines to `ldap.conf`
+
+```
+SASL_CBINDING   tls-endpoint
+SASL_SECPROPS   minssf=0,maxssf=0
+```
+
 ## Usage
 
 ```
