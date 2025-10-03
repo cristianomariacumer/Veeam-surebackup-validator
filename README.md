@@ -218,6 +218,10 @@ Verifies if provided credentials can be used to obtain a valid Kerberos ticket. 
 
 Checks connectivity to a domain controller or LDAP server over SSL. Available for Linux systems with OpenLDAP client tools installed.
 
+### [MSSQL Test](documentation/mssql_test.md)
+
+Runs a parametrised SQL query against Microsoft SQL Server using Kerberos keytab authentication via `sqlcmd`, then asserts the result matches an expected value.
+
 ## Security Considerations
 
 - The tool executes scripts on the host machine, so it should only be deployed in a trusted environment.
