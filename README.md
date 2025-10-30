@@ -1,9 +1,9 @@
 # Backup Validator
 
 A multi-OS tool built with Flask-RESTful that executes scripts on the host machine and returns their status via REST API calls.
-It can be used as part of a Veeam SureBackup job to perform extended checks that are not limite to: is this port open?
+It can be used as part of a Veeam SureBackup job to perform extended checks that are not limited to: is this port open?
 
-I actualy use it for:
+I actually use it for:
 
 - DNS validation with expected result
 - Kerberos validation via ticket release
@@ -12,11 +12,84 @@ I actualy use it for:
 
 ## Disclaimer 
 
-This is AI generated slop: HANDLE WITH CARE. It works for me. Probably it doesen't work for you
+This is AI generated slop: HANDLE WITH CARE. It works for me. Probably it doesn't work for you
 
 ## Security
 
-The REST service could run ANY COMMAND on the server. It's souldn't be an issue in a SureBackup Lab, but outside of it is a no-go.
+The REST service could run ANY COMMAND on the server. It's shouldn't be an issue in a SureBackup Lab, but outside of it is a no-go.
+
+## Usage from surebackup
+
+Use a custom check like this powershell script in the SureBackup job
+
+```
+param (
+    [string]$resthost = "xx.xx.xx.xx", # the host in the Lab where the validator runs
+    [int]$port = 5000
+)
+
+$headers = @{
+    'Content-Type' = 'application/json'
+}
+
+$baseUrl = "http://$resthost`:$port/backup-validator/mssql_test.sh"
+
+$params = @{
+ "host"="dbserver.aggroworld.org";
+ "keytab"="/opt/tester/key.tab";
+ "principal"="sappo@AGGROWORLD.ORG";
+ "query"="SELECT count(*) from backup_validator.dbo.test_tbl01";
+ "expected"="1";
+ "database"="backup_validator"
+}
+
+
+$apiUrl = "$baseUrl" 
+
+$response = Invoke-WebRequest -Uri $apiUrl -Method POST -UseBasicParsing -Body ($params|ConvertTo-Json) -ContentType "application/json"
+if ($response.StatusCode -eq 200){
+    exit 0
+} else {
+    exit 1
+}
+```
+
+or 
+
+```
+param (
+    [string]$resthost = "xx.xx.xx.xx", # the host in the Lab where the validator runs
+    [int]$port = 5000
+)
+
+$headers = @{
+    'Content-Type' = 'application/json'
+}
+
+$baseUrl = "http://$resthost`:$port/backup-validator/ldaps_test.sh"
+
+$params = @{
+ "server"="domaincontroller.aggroworld.org";
+ "base-dn"="dc=aggroworld,dc=org";
+ "keytab"="/opt/tester/key.tab";
+ "principal"="sappo@AGGROWORLD.ORG";
+ "realm"="AGGROWORLD.ORG";
+ "verify-cert"="false";
+ "search-filter"="(userPrincipalname=sappo@aggroworld.org")"
+}
+
+
+$apiUrl = "$baseUrl" 
+
+$response = Invoke-WebRequest -Uri $apiUrl -Method POST -UseBasicParsing -Body ($params|ConvertTo-Json) -ContentType "application/json"
+if ($response.StatusCode -eq 200){
+    exit 0
+} else {
+    exit 1
+}
+
+
+```
 
 ## Features
 
@@ -35,8 +108,8 @@ The REST service could run ANY COMMAND on the server. It's souldn't be an issue 
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/backup-validator.git
-   cd backup-validator
+   git clone https://github.com/cristianomariacumer/Veeam-surebackup-validator.git
+   cd Veeam-surebackup-validator
    ```
 
 2. Create and activate a virtual environment (optional but recommended):
@@ -237,7 +310,7 @@ Checks connectivity to a domain controller or LDAP server over SSL. Available fo
 
 ### [MSSQL Test](documentation/mssql_test.md)
 
-Runs a parametrised SQL query against Microsoft SQL Server using Kerberos keytab authentication via `sqlcmd`, then asserts the result matches an expected value.
+Runs a parameterized SQL query against Microsoft SQL Server using Kerberos keytab authentication via `sqlcmd`, then asserts the result matches an expected value.
 
 ## Security Considerations
 
