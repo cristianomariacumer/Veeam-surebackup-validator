@@ -170,4 +170,4 @@ fi
 # Destroy the ticket
 kdestroy
 echo "Kerberos test completed successfully"
-exit 0 validator
+exit 0

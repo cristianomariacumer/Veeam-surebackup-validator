@@ -107,3 +107,4 @@ venv.bak/
 .vscode/
 *.swp
 *.swo 
+logs/backup-validator.log
