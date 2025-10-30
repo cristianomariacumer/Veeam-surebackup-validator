@@ -1,10 +1,27 @@
 # Backup Validator
 
 A multi-OS tool built with Flask-RESTful that executes scripts on the host machine and returns their status via REST API calls.
+It can be used as part of a Veeam SureBackup job to perform extended checks that are not limite to: is this port open?
+
+I actualy use it for:
+
+- DNS validation with expected result
+- Kerberos validation via ticket release
+- ldap validation via query validation
+- MSSql validation via a query with expected result
+
+## Disclaimer 
+
+This is AI generated slop: HANDLE WITH CARE. It works for me. Probably it doesen't work for you
+
+## Security
+
+The REST service could run ANY COMMAND on the server. It's souldn't be an issue in a SureBackup Lab, but outside of it is a no-go.
 
 ## Features
 
 - Works on both Linux and Windows platforms
+   - tested only on Linux
 - RESTful API for script execution
 - Passes URL parameters to scripts
 - Returns appropriate HTTP status codes:
